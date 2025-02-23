@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interacción con IA</title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="./assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./assets/js/bootstrap.bundle.min.js">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Haz una pregunta a la IA</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form action="http://localhost:8008/answerQuestion" method="POST" id="question-form">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="question-input" name="question" placeholder="Escribe tu pregunta aquí..." required>
+                        <button class="btn btn-primary" type="submit">Preguntar</button>
+                    </div>
+                </form>
+                <div class="alert alert-info" id="loading-message" style="display:none;">Esperando respuesta...</div>
+                <div class="alert alert-success" id="response-container" style="display:none;">
+                    <strong>Pregunta:</strong> <span id="question-text"></span><br>
+                    <strong>Respuesta:</strong> <span id="response-message"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="./assets/js/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Manejo de formulario de pregunta
+            $('#question-form').submit(function(event) {
+                event.preventDefault();
+                
+                var question = $('#question-input').val();
+                if(question.trim() !== "") {
+                    $('#loading-message').show();
+                    $('#response-container').hide();
+
+                    // Preparamos los datos para el POST
+                    var formData = {
+                        question: question+" Responde en español",
+                        plot: false,
+                        plot_details: "",
+                        embeddings_provider: "googleaistudio",
+                        embeddings_model: "models/text-embedding-004",
+                        vector_store_provider: "Chroma",
+                        sql_gen_provider: "googleaistudio",
+                        sql_gen_model: "gemini-2.0-flash",
+                        chat_provider: "googleaistudio",
+                        chat_model: "gemini-2.0-flash",
+                        vdp_database_names: "recomendador_musical",
+                        use_views: "",
+                        expand_set_views: true,
+                        custom_instructions: "",
+                        markdown_response: true,
+                        vector_search_k: 5,
+                        mode: "default",
+                        disclaimer: true,
+                        verbose: true
+                    };
+
+                    // Realizar la solicitud POST con fetch
+                    fetch('http://localhost:8008/answerQuestion', {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Basic YWRtaW46YWRtaW4="
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        $('#loading-message').hide();
+                        var answer = data.answer || "No se pudo obtener una respuesta.";
+
+                        // Mostrar pregunta y respuesta
+                        $('#question-text').text(question);
+                        $('#response-message').text(answer);
+                        $('#response-container').show();
+                    })
+                    .catch(error => {
+                        $('#loading-message').hide();
+                        $('#response-container').show();
+                        $('#question-text').text(question);
+                        $('#response-message').text("Hubo un error al obtener la respuesta. Intenta de nuevo.");
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
